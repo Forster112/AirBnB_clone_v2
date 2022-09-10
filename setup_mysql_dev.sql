@@ -1,6 +1,6 @@
---File that creates a new database and new user
---and grants all privileges to the hbnb_dev database
---just Select privilege to the performance_schema database
+-- File that creates a new database and new user
+-- and grants all privileges to the hbnb_dev database
+-- just Select privilege to the performance_schema database
 
 CREATE DATABASE IF NOT EXISTS hbnb_dev_db;
 CREATE USER IF NOT EXISTS hbnb_dev@localhost IDENTIFIED BY 'hbnb_dev_pwd';
