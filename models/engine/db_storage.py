@@ -1,14 +1,15 @@
 #!/usr/bin/python3
 """DBStorage Module"""
-import os
+from os import getenv
 from sqlalchemy import create_engine
-from sqlalchemy import sessionmaker
-from models.base_model import Base
+from sqlalchemy.orm import sessionmaker, scoped_session
+from models.base_model import Base, BaseModel
 from models.city import City
 from models.state import State
 from models.review import Review
 from models.place import Place
 from models.user import User
+from models.amenity import Amenity
 
 
 class DBStorage:
@@ -18,22 +19,29 @@ class DBStorage:
 
     def __init__(self):
         """initialize db storage"""
-        self.__engine = create_engine("mysql+mysqldb://{}:{}@{}/{}".format(
-                os.getenv("HBNB_MYSQL_USER", default=None),
-                os.getenv("HBNB_MYSQL_PWD", default=None),
-                os.getenv("HBNB_MYSQL_HOST", default=None),
-                os.getenv("HBNB_MYSQL_DB", default=None)),
+        self.__engine = create_engine("mysql+mysqldb://{}:{}@{}/{}".
+                                      format(getenv("HBNB_MYSQL_USER"),
+                                             getenv("HBNB_MYSQL_PWD"),
+                                             getenv("HBNB_MYSQL_HOST"),
+                                             getenv("HBNB_MYSQL_DB")),
                                       pool_pre_ping=True)
-        Base.metadata.create_all(self.__engine)
-        Session = sessionmaker(bind=self.__engine)
-        self.__session = Session()
-        if os.getenv("HBNB_ENV") == "test":
+        if getenv("HBNB_ENV") == "test":
             Base.metadata.drop_all(self.__engine)
 
     def all(self, cls=None):
         """query on the current dataase session"""
 
-        ses_dict = {}
+        if cls:
+            cls = eval(cls) if isinstance(cls, str) else cls
+            objs = self.__session.query(cls).all()
+        else:
+            objs = self.__session.query(State).all()
+            objs.extend(self.__session.query(City).all())
+            objs.extend(self.__session.query(User).all())
+            objs.extend(self.__session.query(Amenity).all())
+            objs.extend(self.__session.query(Place).all())
+            objs.extend(self.__session.query(Review).all())
+        return {"{}.{}".format(type(o).__name__, o.id): o for o in objs} 
 
     def new(self, obj):
         """adds object to the current database session"""
@@ -47,10 +55,15 @@ class DBStorage:
         """delete the current database session"""
         if obj is not None:
             self.__session.delete(obj)
+            self.save()
 
     def reload(self):
         """creates all tables in the database"""
         Base.metadata.create_all(self.__engine)
-        Session = sessionmaker(bind=self.__engine, expire_on_commit=False)
-        Session = scoped_session(Session)
-        self.__session = Session
+        session = sessionmaker(bind=self.__engine,
+                               expire_on_commit=False)
+        self.__session = scoped_session(session)
+
+    def close(self):
+        """Closes and stops the session"""
+        self.__session.close()
