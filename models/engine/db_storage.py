@@ -10,6 +10,8 @@ from models.review import Review
 from models.place import Place
 from models.user import User
 from models.amenity import Amenity
+import models
+import sqlalchemy
 
 
 class DBStorage:
@@ -25,6 +27,10 @@ class DBStorage:
                                              getenv("HBNB_MYSQL_HOST"),
                                              getenv("HBNB_MYSQL_DB")),
                                       pool_pre_ping=True)
+        Base.metadata.create_all(self.__engine)
+        Session = sessionmaker(bind=self.__engine)
+        self.__session = Session()
+
         if getenv("HBNB_ENV") == "test":
             Base.metadata.drop_all(self.__engine)
 
@@ -41,7 +47,7 @@ class DBStorage:
             objs.extend(self.__session.query(Amenity).all())
             objs.extend(self.__session.query(Place).all())
             objs.extend(self.__session.query(Review).all())
-        return {"{}.{}".format(type(o).__name__, o.id): o for o in objs} 
+        return {"{}.{}".format(type(o).__name__, o.id): o for o in objs}
 
     def new(self, obj):
         """adds object to the current database session"""
