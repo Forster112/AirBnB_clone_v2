@@ -1,9 +1,11 @@
 #!/usr/bin/python3
 """This module defines a base class for all models in our hbnb clone"""
 import uuid
+import models
 from datetime import datetime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, String, DateTime, Integer
+
 
 Base = declarative_base()
 
@@ -11,9 +13,9 @@ Base = declarative_base()
 class BaseModel:
     """A base class for all hbnb models"""
 
-    id = Column(Integer, primary_key=True)
-    created_at = Column(DateTime(datetime.utcnow()), nullable=False)
-    updated_at = Column(DateTime(datetime.utcnow()), nullable=False)
+    id = Column(String(60), unique=True, nullable=False, primary_key=True)
+    created_at = Column(DateTime, default=(datetime.utcnow()), nullable=False)
+    updated_at = Column(DateTime, default=(datetime.utcnow()), nullable=False)
 
     def __init__(self, *args, **kwargs):
         """Instatntiates a new model"""
@@ -36,10 +38,9 @@ class BaseModel:
 
     def save(self):
         """Updates updated_at with current time when instance is changed"""
-        from models import storage
         self.updated_at = datetime.now()
         models.storage.new(self)
-        storage.save()
+        models.storage.save()
 
     def to_dict(self):
         """Convert instance into dict format"""
@@ -49,10 +50,8 @@ class BaseModel:
                           (str(type(self)).split('.')[-1]).split('\'')[0]})
         dictionary['created_at'] = self.created_at.isoformat()
         dictionary['updated_at'] = self.updated_at.isoformat()
-        try:
+        if '_sa_instance_state' in dictionary.keys():
             del dictionary['_sa_instance_state']
-        except KeyError:
-            pass
         return dictionary
 
     def delete(self):

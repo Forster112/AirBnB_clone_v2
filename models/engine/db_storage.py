@@ -1,8 +1,9 @@
 #!/usr/bin/python3
 """DBStorage Module"""
 from os import getenv
-from sqlalchemy import create_engine
+from sqlalchemy import (create_engine)
 from sqlalchemy.orm import sessionmaker, scoped_session
+from sqlalchemy.ext.declarative import declarative_base
 from models.base_model import Base, BaseModel
 from models.city import City
 from models.state import State
@@ -11,7 +12,6 @@ from models.place import Place
 from models.user import User
 from models.amenity import Amenity
 import models
-import sqlalchemy
 
 
 class DBStorage:
@@ -37,17 +37,21 @@ class DBStorage:
     def all(self, cls=None):
         """query on the current dataase session"""
 
+        dic = {}
         if cls:
             cls = eval(cls) if isinstance(cls, str) else cls
-            objs = self.__session.query(cls).all()
+            objs = self.__session.query(cls)
+            for element in query:
+                key = "{}.{}".format(type(element).__name__, element.id)
+                dic[key] = element
         else:
-            objs = self.__session.query(State).all()
-            objs.extend(self.__session.query(City).all())
-            objs.extend(self.__session.query(User).all())
-            objs.extend(self.__session.query(Amenity).all())
-            objs.extend(self.__session.query(Place).all())
-            objs.extend(self.__session.query(Review).all())
-        return {"{}.{}".format(type(o).__name__, o.id): o for o in objs}
+            cls_list = [State, City, User, Place, Review, Amenity]
+            for clsl in cls_list:
+                objs = self.__session.query(clsl)
+                for element in objs:
+                    key = "{}.{}".format(type(element).__name__, element.id)
+                    dic[key] = element
+        return (dic)
 
     def new(self, obj):
         """adds object to the current database session"""
@@ -72,4 +76,4 @@ class DBStorage:
 
     def close(self):
         """Closes and stops the session"""
-        self.__session.remove()
+        self.__session.close()
