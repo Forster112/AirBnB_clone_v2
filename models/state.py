@@ -15,9 +15,9 @@ class State(BaseModel, Base):
     __tablename__ = "states"
 
     name = Column(String(128), nullable=False)
-    cities = relationship("City", backref="state",
-                            cascade="all, delete-orphan, delete")
-        
+    cities = relationship("City", cascade="all, delete, delete-orphan",
+                          backref="state")
+
     @property
     def cities(self):
         """Get cities by state"""
@@ -28,7 +28,7 @@ class State(BaseModel, Base):
             city = key.replace('.', ' ')
             city = shlex.split(city)
             if (city[0] == 'City'):
-                city_list.append(cities[key]
+                city_list.append(cities[key])
         for i in city_list:
             if (i.state_id == self.id):
                 result.append(i)

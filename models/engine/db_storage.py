@@ -11,7 +11,6 @@ from models.review import Review
 from models.place import Place
 from models.user import User
 from models.amenity import Amenity
-import models
 
 
 class DBStorage:
@@ -27,9 +26,6 @@ class DBStorage:
                                              getenv("HBNB_MYSQL_HOST"),
                                              getenv("HBNB_MYSQL_DB")),
                                       pool_pre_ping=True)
-        Base.metadata.create_all(self.__engine)
-        Session = sessionmaker(bind=self.__engine)
-        self.__session = Session()
 
         if getenv("HBNB_ENV") == "test":
             Base.metadata.drop_all(self.__engine)
@@ -63,16 +59,16 @@ class DBStorage:
 
     def delete(self, obj=None):
         """delete the current database session"""
-        if obj is not None:
+        if obj:
             self.__session.delete(obj)
 
     def reload(self):
         """creates all tables in the database"""
         Base.metadata.create_all(self.__engine)
-        Session = sessionmaker(bind=self.__engine,
-                               expire_on_commit=False)
-        Session = scoped_session(Session)
-        self.__session = Session
+        sess = sessionmaker(bind=self.__engine,
+                            expire_on_commit=False)
+        Session = scoped_session(sess)
+        self.__session = Session()
 
     def close(self):
         """Closes and stops the session"""
